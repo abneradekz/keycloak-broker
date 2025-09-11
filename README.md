@@ -142,6 +142,9 @@ A sua aplicação cliente, ao invés de redirecionar para a URL de autenticaçã
     ```
   Substitua `[alias-do-seu-idp]` pelo valor encontrado no Passo 1.
 
+#### Passo 3: Construa a URL de Autenticação
+Na configuração do realm colocar o "First Name" e "Last Name" como não obrigatórios, assim o Keycloak não irá pedir estes dados na primeira vez que o usuário logar.
+
 ### Exemplo para Múltiplos Projetos
 
 Imagine que no Keycloak você configurou dois provedores com os seguintes aliases:
