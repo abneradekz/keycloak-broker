@@ -45,8 +45,8 @@ services:
       KC_HOSTNAME: ${KC_HOSTNAME}
       KC_HOSTNAME_PORT: 18700
       KC_HTTP_ENABLED: false
-      KC_HTTPS_CERTIFICATE_FILE: /etc/keycloak/certs/fullchain.pem
-      KC_HTTPS_CERTIFICATE_KEY_FILE: /etc/keycloak/certs/privkey.pem
+      KC_HTTPS_CERTIFICATE_FILE: /etc/keycloak/certs/certificate.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /etc/keycloak/certs/key.pem
       KC_PROXY: edge
     ports:
       - "18400:8443"
