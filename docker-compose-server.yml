@@ -42,7 +42,7 @@ services:
       KC_HTTP_ENABLED: true
       KC_PROXY: edge
     ports:
-      - "18700:8080"
+      - "18400:8080"
     networks:
       - keycloak-net
     depends_on:
