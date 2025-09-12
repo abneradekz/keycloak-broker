@@ -162,3 +162,103 @@ Dessa forma, a sua aplicação cliente tem controle total sobre o fluxo de login
 * **Segurança:** Nunca envie o arquivo `.env` para um repositório Git. Adicione-o ao seu `.gitignore`.
 * **HTTPS e Domínio:** Em produção, você deve rodar o Keycloak atrás de um reverse proxy (como Nginx ou Traefik) com HTTPS configurado. A variável `KC_HOSTNAME` no arquivo `.env` deve ser alterada para o seu domínio público (ex: `sso.meudominio.com`).
 * **Backups:** Lembre-se de fazer backup regularmente da pasta `./postgresql/data`, pois ela contém todos os seus dados e configurações.
+
+## Ambiente de Teste Local (IdP e SP no mesmo Keycloak)
+
+Para um ambiente de desenvolvimento e testes totalmente autocontido, a abordagem mais eficiente é usar uma única instância do Keycloak para hospedar dois Realms: um atuando como Provedor de Identidade (IdP) e outro como Service Provider (SP)/Broker.
+
+Este guia detalha como configurar essa interação do zero.
+
+### Parte A: Configurando o Realm do IdP (`empresa-corp-idp`)
+
+Este Realm simulará o provedor de identidade corporativo, sendo o "dono" dos usuários e senhas.
+
+1.  **Crie o Realm do IdP:**
+    * Na console do Keycloak, clique em **master** (canto superior esquerdo) e em **Create Realm**.
+    * **Realm name:** `empresa-corp-idp`. Clique em **Create**.
+
+2.  **Crie um Usuário de Teste:**
+    * Certifique-se de que você está no Realm `empresa-corp-idp`.
+    * No menu, vá para **Users** > **Add user**.
+    * **Username:** `teste.idp`. Clique em **Create**.
+    * Na tela do usuário, vá para a aba **Credentials** e defina uma senha. Desmarque a opção "Temporary" para que ela seja permanente.
+
+3.  **Crie o Cliente SAML (que representa o nosso SP):**
+    * Vá para **Clients** > **Create client**.
+    * **Client type:** `SAML`.
+    * **Client ID:** `http://localhost:8080/realms/praxis-business` (Usar a URL do Realm do SP é uma boa convenção).
+    * Clique em **Next**.
+    * **Configure os Detalhes:**
+        * **Name:** `Broker Praxis Business`
+        * **Valid redirect URIs:** Adicione a URL do endpoint do broker. O alias que usaremos é `keycloak-local-idp`. A URL final é: `http://localhost:8080/realms/praxis-business/broker/keycloak-local-idp/endpoint`
+        * Salve.
+
+4.  **Configure os Mappers de Atributos:**
+    * Ainda na tela do cliente SAML, vá para a aba **Client scopes**.
+    * Clique no escopo com o sufixo `-dedicated` (ex: `broker-praxis-business-dedicated`).
+    * Vá para a aba **Mappers** e clique em **Configure a new mapper**. Crie os seguintes três mappers:
+        * **Para o e-mail:** Name: `email`, Mapper Type: `User Attribute`, User Attribute: `email`, SAML Attribute Name: `email`.
+        * **Para o nome:** Name: `firstName`, Mapper Type: `User Attribute`, User Attribute: `firstName`, SAML Attribute Name: `firstName`.
+        * **Para o sobrenome:** Name: `lastName`, Mapper Type: `User Attribute`, User Attribute: `lastName`, SAML Attribute Name: `lastName`.
+
+5.  **Obtenha a URL dos Metadados:**
+    * Vá para **Realm settings** > **Endpoints**.
+    * Encontre o link **SAML 2.0 Identity Provider Metadata** e copie seu endereço.
+
+### Parte B: Configurando o Realm do SP/Broker (`praxis-business`)
+
+Este Realm protegerá suas aplicações e confiará no Realm do IdP para autenticar os usuários.
+
+1.  **Crie e Mude para o Realm do SP:**
+    * No canto superior esquerdo, clique em `empresa-corp-idp` e volte para a lista de Realms.
+    * Crie o Realm `praxis-business` (se ainda não existir).
+    * Mude para o Realm `praxis-business`.
+
+2.  **Crie a Aplicação Cliente Final (Obrigatório):**
+    * Em `Clients`, clique em **Create client**.
+    * **Client type:** `OpenID Connect`.
+    * **Client ID:** `minha-aplicacao-web` (ou o nome que preferir).
+    * Clique em **Next**.
+    * Ative **Client authentication** e em **Valid redirect URIs**, adicione a URL da sua aplicação de teste, por exemplo, `http://localhost:3000/callback`.
+    * Salve.
+
+3.  **Crie o Provedor de Identidade:**
+    * Vá para **Identity Providers** > **Add provider...** > `SAML v2.0`.
+    * **Alias:** `keycloak-local-idp` (deve ser o mesmo usado na URL de redirect do passo A-3).
+    * Na seção **Import external IDP config**, cole a URL dos metadados que você copiou do Realm `empresa-corp-idp` e clique em **Import**.
+    * Salve.
+
+4.  **Verifique os Mappers:**
+    * Vá para a aba **Mappers** do provedor recém-criado. Confirme se os mappers para `email`, `firstName` e `lastName` foram criados automaticamente.
+
+5.  **Ajuste o Perfil do Usuário (Passo Crucial para Login Automático):**
+    * Vá para **Realm settings** > **User profile**.
+    * Verifique se os atributos `firstName` e `lastName` **NÃO** estão marcados como **Required**. Se estiverem, clique em cada um e desative a validação "Required".
+
+### Parte C: Configurando a Assinatura Segura
+
+Por padrão, para simplificar, a comunicação inicial entre o SP e o IdP não é assinada. Para simular um ambiente de produção seguro, ative a assinatura da requisição de login.
+
+1.  **Exporte o Certificado do Broker (SP):**
+    * Mude para o Realm **`praxis-business`**.
+    * Vá para **Realm settings** > aba **Keys**.
+    * Encontre a chave `rsa-generated`, clique em **Certificate**, copie todo o conteúdo e salve-o em um arquivo chamado `broker-cert.pem`.
+
+2.  **Importe o Certificado no Cliente do IdP:**
+    * Mude para o Realm **`empresa-corp-idp`**.
+    * Vá para **Clients** e clique no cliente SAML que representa o broker.
+    * Vá para a aba **Keys**, clique em **Import**, selecione o formato `Certificate PEM` e importe o arquivo `broker-cert.pem`.
+
+
+### Parte D: Testando o Fluxo
+
+1.  Monte a URL de login para sua aplicação, especificando o IdP local com o `kc_idp_hint`:
+
+    ```
+    http://localhost:8080/realms/praxis-business/protocol/openid-connect/auth?client_id=minha-aplicacao-web&response_type=code&scope=openid&redirect_uri=http://localhost:3000/callback&kc_idp_hint=keycloak-local-idp
+    ```
+    (Lembre-se de usar o `client_id` e `redirect_uri` corretos da sua aplicação criada na Parte B).
+
+2.  Cole a URL em uma janela anônima do navegador.
+
+**Resultado Esperado:** Você será redirecionado para a tela de login do Keycloak (com a aparência do Realm `empresa-corp-idp`). Após se autenticar com o `teste.idp`, você será enviado de volta para a sua aplicação final em `http://localhost:3000/callback` com um código de autorização, completando o fluxo de SSO.

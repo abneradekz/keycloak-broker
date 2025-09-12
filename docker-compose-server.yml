@@ -51,5 +51,10 @@ services:
 
 # --- Seção para definir a rede customizada --- #
 networks:
-  keycloak-net:
+  app-next-network:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.1.46.8/29
+          gateway: 172.1.46.9
