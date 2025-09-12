@@ -51,7 +51,7 @@ services:
 
 # --- Seção para definir a rede customizada --- #
 networks:
-  app-next-network:
+  keycloak-net:
     driver: bridge
     ipam:
       driver: default
