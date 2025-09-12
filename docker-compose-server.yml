@@ -30,7 +30,7 @@ services:
     volumes:
       # Mapeia o diretório de certificados do Let's Encrypt para dentro do container (modo somente leitura)
       # O Keycloak poderá ler os arquivos fullchain.pem e privkey.pem
-      - /etc/letsencrypt/live/secure.adekz.com:/etc/keycloak/certs:ro
+      - ./keycloak/certs-le:/etc/keycloak/certs
     env_file:
       - .env
     environment:
