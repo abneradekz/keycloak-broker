@@ -40,7 +40,7 @@ services:
       KC_DB_SCHEMA: public
       KC_HOSTNAME: ${KC_HOSTNAME}
       KC_HOSTNAME_PORT: 18700
-      KC_HTTP_ENABLED: false
+      KC_HTTP_ENABLED: true
       KC_PROXY: edge
     ports:
       - "18400:8080"
