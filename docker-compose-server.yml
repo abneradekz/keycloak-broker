@@ -40,11 +40,9 @@ services:
       KC_DB_SCHEMA: public
       KC_HOSTNAME: ${KC_HOSTNAME}
       KC_HOSTNAME_PORT: 18700
-      KC_HTTP_PORT: 18700
-      KC_HTTP_ENABLED: true
       KC_PROXY: edge
     ports:
-      - "18400:18700"
+      - "18400:8080"
     networks:
       - keycloak-net
     depends_on:
