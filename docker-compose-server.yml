@@ -27,10 +27,6 @@ services:
     container_name: keycloak-broker
     restart: always
     command: start-dev
-    volumes:
-      # Mapeia o diretório de certificados do Let's Encrypt para dentro do container (modo somente leitura)
-      # O Keycloak poderá ler os arquivos fullchain.pem e privkey.pem
-      - ./keycloak/certs-le:/etc/keycloak/certs
     env_file:
       - .env
     environment:
@@ -43,13 +39,10 @@ services:
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_DB_SCHEMA: public
       KC_HOSTNAME: ${KC_HOSTNAME}
-      KC_HOSTNAME_PORT: 18700
-      KC_HTTP_ENABLED: false
-      KC_HTTPS_CERTIFICATE_FILE: /etc/keycloak/certs/certificate.pem
-      KC_HTTPS_CERTIFICATE_KEY_FILE: /etc/keycloak/certs/key.pem
+      KC_HTTP_ENABLED: true
       KC_PROXY: edge
     ports:
-      - "18400:8443"
+      - "18400:8080"
     networks:
       - keycloak-net
     depends_on:
