@@ -38,7 +38,7 @@ services:
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_DB_SCHEMA: public
-      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_HOSTNAME: server.adekz.com
       KC_HTTP_ENABLED: true
       KC_PROXY: edge
     ports:
