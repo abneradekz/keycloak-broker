@@ -41,7 +41,6 @@ services:
       KC_HOSTNAME: ${KC_HOSTNAME}
       KC_HTTP_ENABLED: true
       KC_PROXY_HEADERS: xforwarded
-      KC_LOG_LEVEL: DEBUG
     ports:
       - "18400:8080"
     networks:
