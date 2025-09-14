@@ -1,0 +1,60 @@
+services:
+
+  # --- Serviço do Banco de Dados PostgreSQL ---
+  db:
+    image: postgres:16
+    container_name: keycloak-db
+    restart: always
+    volumes:
+      - ./postgresql/data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - keycloak-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  # --- Serviço do Keycloak ---
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3
+    container_name: keycloak-broker
+    restart: always
+    command: start
+    env_file:
+      - .env
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL_HOST: db
+      KC_DB_URL_DATABASE: ${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_DB_SCHEMA: public
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_HTTP_ENABLED: true
+      KC_PROXY_HEADERS: xforwarded
+    ports:
+      - "18401:8080"
+    networks:
+      - keycloak-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+# --- Seção para definir a rede customizada --- #
+networks:
+  keycloak-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.1.101.8/29
+          gateway: 172.1.101.9
