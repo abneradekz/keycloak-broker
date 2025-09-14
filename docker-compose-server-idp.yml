@@ -3,7 +3,7 @@ services:
   # --- Serviço do Banco de Dados PostgreSQL ---
   db:
     image: postgres:16
-    container_name: keycloak-db
+    container_name: keycloak-db-idp
     restart: always
     volumes:
       - ./postgresql/data:/var/lib/postgresql/data
@@ -24,7 +24,7 @@ services:
   # --- Serviço do Keycloak ---
   keycloak:
     image: quay.io/keycloak/keycloak:26.3
-    container_name: keycloak-broker
+    container_name: keycloak-broker-idp
     restart: always
     command: start
     env_file:
