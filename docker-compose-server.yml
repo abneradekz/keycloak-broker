@@ -26,7 +26,7 @@ services:
     image: quay.io/keycloak/keycloak:26.3
     container_name: keycloak-broker
     restart: always
-    command: start-dev
+    command: start
     env_file:
       - .env
     environment:
