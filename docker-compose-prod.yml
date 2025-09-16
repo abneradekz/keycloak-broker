@@ -23,10 +23,10 @@ services:
 
   # --- Serviço do Keycloak ---
   keycloak:
-    image: quay.io/keycloak/keycloak:26.3
+    build: .
+    image: meu-keycloak-otimizado:26.3
     container_name: keycloak-broker
     restart: always
-    command: start
     env_file:
       - .env
     environment:
